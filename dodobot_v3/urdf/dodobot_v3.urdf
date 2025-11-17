@@ -26,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/body_link.STL" />
+          filename="../meshes/body_link.STL" />
       </geometry>
       <material
         name="">
@@ -40,7 +40,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/body_link.STL" />
+          filename="../meshes/body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -66,7 +66,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_1.STL" />
+          filename="../meshes/right_link_1.STL" />
       </geometry>
       <material
         name="">
@@ -80,7 +80,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_1.STL" />
+          filename="../meshes/right_link_1.STL" />
       </geometry>
     </collision>
   </link>
@@ -136,7 +136,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_2.STL" />
+          filename="../meshes/right_link_2.STL" />
       </geometry>
       <material
         name="">
@@ -150,7 +150,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_2.STL" />
+          filename="../meshes/right_link_2.STL" />
       </geometry>
     </collision>
   </link>
@@ -206,7 +206,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_3.STL" />
+          filename="../meshes/right_link_3.STL" />
       </geometry>
       <material
         name="">
@@ -220,7 +220,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_3.STL" />
+          filename="../meshes/right_link_3.STL" />
       </geometry>
     </collision>
   </link>
@@ -275,7 +275,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_4.STL" />
+          filename="../meshes/right_link_4.STL" />
       </geometry>
       <material
         name="">
@@ -289,7 +289,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/right_link_4.STL" />
+          filename="../meshes/right_link_4.STL" />
       </geometry>
     </collision>
   </link>
@@ -344,7 +344,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_1.STL" />
+          filename="../meshes/left_link_1.STL" />
       </geometry>
       <material
         name="">
@@ -358,7 +358,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_1.STL" />
+          filename="../meshes/left_link_1.STL" />
       </geometry>
     </collision>
   </link>
@@ -413,7 +413,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_2.STL" />
+          filename="../meshes/left_link_2.STL" />
       </geometry>
       <material
         name="">
@@ -427,7 +427,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_2.STL" />
+          filename="../meshes/left_link_2.STL" />
       </geometry>
     </collision>
   </link>
@@ -482,7 +482,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_3.STL" />
+          filename="../meshes/left_link_3.STL" />
       </geometry>
       <material
         name="">
@@ -496,7 +496,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_3.STL" />
+          filename="../meshes/left_link_3.STL" />
       </geometry>
     </collision>
   </link>
@@ -551,7 +551,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_4.STL" />
+          filename="../meshes/left_link_4.STL" />
       </geometry>
       <material
         name="">
@@ -565,7 +565,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/Users/aaronalexander/dodo_Genesis_RL/dodobot_v3/meshes/left_link_4.STL" />
+          filename="../meshes/left_link_4.STL" />
       </geometry>
     </collision>
   </link>
