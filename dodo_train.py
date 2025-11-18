@@ -13,6 +13,7 @@ from rsl_rl.runners.on_policy_runner import OnPolicyRunner
 from dodo_env import DodoEnv
 import wandb
 import copy
+from file_format_and_paths import FileFormatAndPaths
 
 # -----------------------------------------------------------------------------
 # Global logs (alle wichtigen Reward‑Terme)
@@ -31,6 +32,10 @@ knee_extension_at_push = []
 bird_hip_phase = []
 hip_abduction_penalty = []
 lateral_drift_penalty = []
+
+
+dodo_path_helper = FileFormatAndPaths(FileFormatAndPaths.ChooseFileFormat.XML) # Create path helper
+
 
 def wandb_log(step, stats):
     # Konsole und W&B loggen
@@ -140,12 +145,7 @@ def get_cfgs():
             "Left_KNEE_FE": -1.1, "Right_SHIN_FE": 1.1,
             "Left_FOOT_ANKLE": 0.0, "Right_FOOT_ANKLE": 0.0
         },
-        "joint_names": [
-            "Left_HIP_AA", "Right_HIP_AA",
-            "Left_THIGH_FE", "Right_THIGH_FE",
-            "Left_KNEE_FE", "Right_SHIN_FE",
-            "Left_FOOT_ANKLE", "Right_FOOT_ANKLE"
-        ],
+        "joint_names": dodo_path_helper.joint_names,
         "kp": 200.0,
         "kd": 2.0 * math.sqrt(200.0),
         "termination_if_roll_greater_than": 30,

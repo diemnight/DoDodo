@@ -2,14 +2,14 @@
 import numpy as np
 import genesis as gs
 from dodo_env import DodoEnv
-import os_workarounds
+import file_format_and_paths
 import os
 
 gs.init(backend=gs.gpu)
 
-paths = os_workarounds.get_paths()
+paths = file_format_and_paths.get_paths()
 manual_stepping = False
-robot_file: str = "urdf" #TODO: write 'urdf' or 'xml' whatever you want to do
+robot_file_flag: str = "urdf" #TODO: write 'urdf' or 'xml' whatever you want to do
 jnt_names = None
 
 scene = gs.Scene(
@@ -30,7 +30,7 @@ plane = scene.add_entity(
     gs.morphs.Plane(),
 )
 
-if robot_file == "urdf":
+if robot_file_flag == "urdf":
     dodo = scene.add_entity(
     gs.morphs.URDF(      
         file  = str(os.path.join(paths['urdf'], "dodobot_v3.urdf")),
@@ -41,7 +41,7 @@ if robot_file == "urdf":
     )
     jnt_names = ["left_joint_1","right_joint_1","left_joint_2","right_joint_2", "left_joint_3","right_joint_3","left_joint_4","right_joint_4"]
 
-elif robot_file == "xml":
+elif robot_file_flag == "xml":
     dodo = scene.add_entity(
         gs.morphs.MJCF(
             file  = str(os.path.join(paths['dodo_robot'], "dodo.xml")),
