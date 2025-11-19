@@ -34,7 +34,7 @@ hip_abduction_penalty = []
 lateral_drift_penalty = []
 
 
-dodo_path_helper = FileFormatAndPaths(FileFormatAndPaths.ChooseFileFormat.XML) # Create path helper
+dodo_path_helper: FileFormatAndPaths = FileFormatAndPaths(FileFormatAndPaths.ChooseFileFormat.URDF) # Create path helper
 
 
 def wandb_log(step, stats):
@@ -138,13 +138,19 @@ def get_train_cfg(exp_name, max_iterations):
 
 def get_cfgs():
     env_cfg = {
-        "num_actions": 8,
-        "default_joint_angles": {
-            "Left_HIP_AA": 0.0, "Right_HIP_AA": 0.0,
-            "Left_THIGH_FE": 0.6, "Right_THIGH_FE": -0.6,
-            "Left_KNEE_FE": -1.1, "Right_SHIN_FE": 1.1,
-            "Left_FOOT_ANKLE": 0.0, "Right_FOOT_ANKLE": 0.0
-        },
+        "num_actions": len(dodo_path_helper.joint_names), # number of jnt names probably (usually its 8)
+        "default_joint_angles": dodo_path_helper.set_default_joint_angles_dict(
+            default_angles=[
+                0.0, # "left hip"
+                0.0, # "right hip"
+                0.6, # "left thigh"
+                0.6, # "right thigh"
+                1.1, # "left knee"
+                1.1, # "right shin"
+                0.0, # "left foot ankle"
+                0.0  # "right foot ankle"
+                ]
+            ),
         "joint_names": dodo_path_helper.joint_names,
         "kp": 200.0,
         "kd": 2.0 * math.sqrt(200.0),
@@ -157,8 +163,8 @@ def get_cfgs():
         "action_scale": 4,
         "simulate_action_latency": False,
         "clip_actions": 1.0,
-        "robot_mjcf": "dodo_robot/dodo.xml",
-        "foot_link_names": ["Left_FOOT_FE", "Right_FOOT_FE"]
+        "robot_file_path": str(dodo_path_helper.robot_file_path_relative), # for example: "robot_mjcf": dodo_robot\dodo.xml
+        "foot_link_names": dodo_path_helper.foot_link_names # for example: ['Left_FOOT_FE', 'Right_FOOT_FE']
     }
     obs_cfg = {
         "num_obs": 6 + 3 * env_cfg["num_actions"] + 3,
@@ -333,6 +339,7 @@ def main():
         obs_cfg=obs_cfg,
         reward_cfg=reward_cfg,
         command_cfg=command_cfg,
+        dodo_path_helper=dodo_path_helper,
         show_viewer=False
     )
     env.reset()

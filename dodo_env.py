@@ -4,6 +4,7 @@ import os
 import math
 import genesis as gs
 from genesis.utils.geom import quat_to_xyz, transform_by_quat, inv_quat, transform_quat_by_quat
+from file_format_and_paths import FileFormatAndPaths
 
 # ---------------------------------------------------
 # Reward Registry
@@ -25,7 +26,7 @@ class DodoEnv:
     CONTACT_HEIGHT = 0.05
     SWING_HEIGHT_THRESHOLD = 0.10
 
-    def __init__(self, num_envs, env_cfg, obs_cfg, reward_cfg, command_cfg, show_viewer=False):
+    def __init__(self, num_envs, env_cfg, obs_cfg, reward_cfg, command_cfg, dodo_path_helper: FileFormatAndPaths, show_viewer=False):
         self.num_envs = num_envs
         self.device = gs.device
         self.env_cfg = env_cfg
@@ -42,6 +43,8 @@ class DodoEnv:
         self.last_torques = torch.zeros((self.num_envs, self.num_actions), device=self.device)
         self.obs_scales = obs_cfg.get("obs_scales", {})
         self.reward_scales = reward_cfg.get("reward_scales", {})
+
+        self.dodo_path_helper = dodo_path_helper
 
         # === Rewards vorbereiten ===
         self.reward_functions = {}
@@ -78,13 +81,24 @@ class DodoEnv:
         self.base_init_quat = torch.tensor(env_cfg["base_init_quat"], device=self.device)
         self.inv_base_init_quat = inv_quat(self.base_init_quat)
 
-        self.robot = self.scene.add_entity(
-            gs.morphs.MJCF(
-                file=env_cfg.get("robot_mjcf", "dodo.xml"),
-                pos=self.base_init_pos.cpu().numpy(),
-                quat=self.base_init_quat.cpu().numpy(),
+        if str(self.dodo_path_helper.robot_file_format) == "xml":
+            self.robot = self.scene.add_entity(
+                gs.morphs.MJCF(
+                    file=env_cfg.get("robot_file_path", "dodo.xml"),
+                    pos=self.base_init_pos.cpu().numpy(),
+                    quat=self.base_init_quat.cpu().numpy(),
+                )
             )
-        )
+        elif str(self.dodo_path_helper.robot_file_format) == "urdf":
+            self.robot = self.scene.add_entity(
+                gs.morphs.URDF(
+                    file=env_cfg.get("robot_file_path", "dodobot_v3.urdf"),
+                    pos=self.base_init_pos.cpu().numpy(),
+                    quat=self.base_init_quat.cpu().numpy(),
+                )
+            )
+        else:
+            print("Not able to load Robot configuraton file into scene (XML or URDF)")
 
         self.scene.build(n_envs=num_envs)
 
