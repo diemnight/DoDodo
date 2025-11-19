@@ -5,6 +5,7 @@ from typing import Iterable, Optional
 from enum import Enum
 #import genesis as gs
 import xml.etree.ElementTree as ET
+import re
 
 class FileFormatAndPaths():
     """
@@ -168,22 +169,150 @@ class FileFormatAndPaths():
     #     return joint_names
 
     """
-    def _extract_joint_names(self) -> list[str]:
-        if self.robot_file_format == str(self.ChooseFileFormat.XML.value):
-            self.robot_file_path = Path.joinpath(self.relevant_paths_dict["dodo_robot"], "dodo.xml")
-            return self._extract_joints_from_xml()
-        elif self.robot_file_format == str(self.ChooseFileFormat.URDF.value):
-            self.robot_file_path = Path.joinpath(self.relevant_paths_dict["urdf"], "dodobot_v3.urdf")
-            return self._extract_joints_from_urdf()
-        else:
-            print("ERROR while trying to extract joint names in <FileFormatAndPaths._extract_joint_names>")
-            return []
+    # def _extract_joint_names(self) -> list[str]:
+    #     if self.robot_file_format == str(self.ChooseFileFormat.XML.value):
+    #         self.robot_file_path = Path.joinpath(self.relevant_paths_dict["dodo_robot"], "dodo.xml")
+    #         return self._extract_joints_from_xml()
+    #     elif self.robot_file_format == str(self.ChooseFileFormat.URDF.value):
+    #         self.robot_file_path = Path.joinpath(self.relevant_paths_dict["urdf"], "dodobot_v3.urdf")
+    #         return self._extract_joints_from_urdf()
+    #     else:
+    #         print("ERROR while trying to extract joint names in <FileFormatAndPaths._extract_joint_names>")
+    #         return []
         
+    # def _extract_joints_from_urdf(self) -> list[str]:
+    #     """Read all the joint_names from URDF and sort them according to the hardcoded version:
+    #     ['left_joint_1','right_joint_1', ..., 'left_joint_4','right_joint_4'].
+    #     """
+    #     path: Path = self.robot_file_path
+    #     tree = ET.parse(path)
+    #     root = tree.getroot()
+
+    #     raw_names: list[str] = []
+    #     for joint in root.findall(".//joint"):
+    #         name = joint.get("name")
+    #         if name:
+    #             raw_names.append(name)
+
+    #     # Links / Rechts trennen und numerisch sortieren
+    #     left = []
+    #     right = []
+
+    #     for name in raw_names:
+    #         if name.startswith("left_joint_"):
+    #             left.append(name)
+    #         elif name.startswith("right_joint_"):
+    #             right.append(name)
+
+    #     # Nach der Ziffer sortieren, falls sie nicht schon 1..4 sind
+    #     def joint_sort_key(n: str) -> int:
+    #         # erwartet z.B. 'left_joint_3' -> 3
+    #         try:
+    #             return int(n.split("_")[-1])
+    #         except ValueError:
+    #             return 0  # Fallback, falls was komisches drin steht
+
+    #     left.sort(key=joint_sort_key)
+    #     right.sort(key=joint_sort_key)
+
+    #     # Interleaved Reihenfolge wie früher: left1, right1, left2, right2, ...
+    #     joint_names: list[str] = []
+    #     for l, r in zip(left, right):
+    #         joint_names.append(l)
+    #         joint_names.append(r)
+
+    #     # Falls aus irgendeinem Grund ungleiche Anzahl vorliegt, Rest anhängen
+    #     if len(left) > len(right):
+    #         joint_names.extend(left[len(right):])
+    #     elif len(right) > len(left):
+    #         joint_names.extend(right[len(left):])
+
+    #     return joint_names
+
+
+    # def _extract_joints_from_xml(self) -> list[str]:
+    #     """Read all the joint_names from XML/MJCF and sort them according to the hardcoded version:
+    #     ['Left_HIP_AA','Right_HIP_AA', 'Left_THIGH_FE','Right_THIGH_FE', ...].
+    #     """
+    #     path: Path = self.robot_file_path
+    #     tree = ET.parse(path)
+    #     root = tree.getroot()
+
+    #     raw_names: list[str] = []
+    #     for joint in root.findall(".//joint"):
+    #         name = joint.get("name")
+    #         if name:
+    #             raw_names.append(name)
+
+    #     # 'root' ggf. rauswerfen
+    #     raw_names = [n for n in raw_names if n != "root"]
+
+    #     # Links / Rechts trennen, Reihenfolge innerhalb jeder Seite aus dem File übernehmen
+    #     left = [n for n in raw_names if n.startswith("Left_")]
+    #     right = [n for n in raw_names if n.startswith("Right_")]
+
+    #     # Interleaved: Left_X, Right_X, Left_Y, Right_Y, ...
+    #     joint_names: list[str] = []
+    #     for l, r in zip(left, right):
+    #         joint_names.append(l)
+    #         joint_names.append(r)
+
+    #     # Falls Dateien nicht perfekt symmetrisch sind, Rest anhängen
+    #     if len(left) > len(right):
+    #         joint_names.extend(left[len(right):])
+    #     elif len(right) > len(left):
+    #         joint_names.extend(right[len(left):])
+
+    #     return joint_names
+
+    def _extract_joint_names(self) -> list[str]:
+        """
+        Wähle abhängig vom Dateiformat (XML / URDF) die passende
+        Parsing-Funktion und liefere die normalisierte, interleavte
+        Gelenkliste zurück.
+        """
+        if self.robot_file_format == str(self.ChooseFileFormat.XML.value):
+            # Pfad zum MJCF/XML setzen
+            self.robot_file_path = Path.joinpath(
+                self.relevant_paths_dict["dodo_robot"], "dodo.xml"
+            )
+            joint_names = self._extract_joints_from_xml()
+
+        elif self.robot_file_format == str(self.ChooseFileFormat.URDF.value):
+            # Pfad zum URDF setzen
+            self.robot_file_path = Path.joinpath(
+                self.relevant_paths_dict["urdf"], "dodobot_v3.urdf"
+            )
+            joint_names = self._extract_joints_from_urdf()
+
+        else:
+            raise ValueError(
+                f"Unsupported robot_file_format '{self.robot_file_format}' in "
+                f"<FileFormatAndPaths._extract_joint_names>."
+            )
+
+        if not joint_names:
+            raise RuntimeError(
+                "No joint names were extracted in <FileFormatAndPaths._extract_joint_names>."
+            )
+
+        return joint_names
+
+    # --------------------------------------------------------------------- #
+    #  URDF
+    # --------------------------------------------------------------------- #
+
     def _extract_joints_from_urdf(self) -> list[str]:
-        """Read all the joint_names from URDF and sort them according to the hardcoded version:
-        ['left_joint_1','right_joint_1', ..., 'left_joint_4','right_joint_4'].
+        """
+        Lese alle Joint-Namen aus dem URDF und sortiere sie robust nach Seite
+        (left/right) und einer abgeleiteten Ordnung (Nummer oder hip/knee).
+        Danach werden sie interleaved zurückgegeben:
+        left_0, right_0, left_1, right_1, ...
         """
         path: Path = self.robot_file_path
+        if not path.exists():
+            raise FileNotFoundError(f"URDF file not found at: {path}")
+
         tree = ET.parse(path)
         root = tree.getroot()
 
@@ -193,47 +322,29 @@ class FileFormatAndPaths():
             if name:
                 raw_names.append(name)
 
-        # Links / Rechts trennen und numerisch sortieren
-        left = []
-        right = []
+        if not raw_names:
+            raise RuntimeError(
+                f"No joints with 'name' attribute found in URDF: {path}"
+            )
 
-        for name in raw_names:
-            if name.startswith("left_joint_"):
-                left.append(name)
-            elif name.startswith("right_joint_"):
-                right.append(name)
+        # Gemeinsame Normalisierung & Interleave-Logik nutzen
+        return self._normalize_and_interleave_joints(raw_names, source="URDF")
 
-        # Nach der Ziffer sortieren, falls sie nicht schon 1..4 sind
-        def joint_sort_key(n: str) -> int:
-            # erwartet z.B. 'left_joint_3' -> 3
-            try:
-                return int(n.split("_")[-1])
-            except ValueError:
-                return 0  # Fallback, falls was komisches drin steht
-
-        left.sort(key=joint_sort_key)
-        right.sort(key=joint_sort_key)
-
-        # Interleaved Reihenfolge wie früher: left1, right1, left2, right2, ...
-        joint_names: list[str] = []
-        for l, r in zip(left, right):
-            joint_names.append(l)
-            joint_names.append(r)
-
-        # Falls aus irgendeinem Grund ungleiche Anzahl vorliegt, Rest anhängen
-        if len(left) > len(right):
-            joint_names.extend(left[len(right):])
-        elif len(right) > len(left):
-            joint_names.extend(right[len(left):])
-
-        return joint_names
-
+    # --------------------------------------------------------------------- #
+    #  XML / MJCF
+    # --------------------------------------------------------------------- #
 
     def _extract_joints_from_xml(self) -> list[str]:
-        """Read all the joint_names from XML/MJCF and sort them according to the hardcoded version:
-        ['Left_HIP_AA','Right_HIP_AA', 'Left_THIGH_FE','Right_THIGH_FE', ...].
+        """
+        Lese alle Joint-Namen aus dem MJCF/XML und sortiere sie robust nach
+        Seite (left/right) und einer abgeleiteten Ordnung (Nummer oder hip/knee).
+        Danach werden sie interleaved zurückgegeben:
+        Left_0, Right_0, Left_1, Right_1, ...
         """
         path: Path = self.robot_file_path
+        if not path.exists():
+            raise FileNotFoundError(f"XML/MJCF file not found at: {path}")
+
         tree = ET.parse(path)
         root = tree.getroot()
 
@@ -243,28 +354,132 @@ class FileFormatAndPaths():
             if name:
                 raw_names.append(name)
 
-        # 'root' ggf. rauswerfen
+        if not raw_names:
+            raise RuntimeError(
+                f"No joints with 'name' attribute found in XML/MJCF: {path}"
+            )
+
+        # Falls du "root" oder ähnliche Dummies nicht willst:
         raw_names = [n for n in raw_names if n != "root"]
 
-        # Links / Rechts trennen, Reihenfolge innerhalb jeder Seite aus dem File übernehmen
-        left = [n for n in raw_names if n.startswith("Left_")]
-        right = [n for n in raw_names if n.startswith("Right_")]
+        return self._normalize_and_interleave_joints(raw_names, source="XML")
 
-        # Interleaved: Left_X, Right_X, Left_Y, Right_Y, ...
+    # --------------------------------------------------------------------- #
+    #  Gemeinsame Hilfsfunktionen
+    # --------------------------------------------------------------------- #
+
+    def _normalize_and_interleave_joints(
+        self, raw_names: list[str], source: str
+    ) -> list[str]:
+        """
+        Nimmt eine Liste ungeordneter Joint-Namen und:
+        - erkennt 'left' / 'right' (case-insensitive),
+        - bestimmt einen Ordnungs-Key pro Joint
+          (Zahl 0..n ODER Keyword 'hip'/'knee'),
+        - sortiert links/rechts jeweils danach,
+        - interleaved sie: left_0, right_0, left_1, right_1, ...
+
+        Annahme (von dir spezifiziert):
+        - jedes Gelenk enthält 'left' oder 'right' im Namen
+        - und zusätzlich entweder 'hip', 'knee' ODER eine Zahl 0..n.
+        """
+        left: list[tuple[int, str]] = []
+        right: list[tuple[int, str]] = []
+
+        for name in raw_names:
+            side = self._detect_side(name, source=source)
+            order_key = self._joint_order_key(name, source=source)
+
+            if side == "left":
+                left.append((order_key, name))
+            elif side == "right":
+                right.append((order_key, name))
+            else:
+                # Sollte durch _detect_side eigentlich nie passieren
+                raise ValueError(
+                    f"Joint '{name}' in {source} is neither left nor right."
+                )
+
+        if not left or not right:
+            raise RuntimeError(
+                f"Expected at least one left and one right joint in {source}, "
+                f"got left={len(left)}, right={len(right)}.\n"
+                f"Raw names: {raw_names}"
+            )
+
+        # Nach Ordnung sortieren
+        left.sort(key=lambda x: x[0])
+        right.sort(key=lambda x: x[0])
+
+        if len(left) != len(right):
+            raise RuntimeError(
+                f"Mismatch between number of left and right joints in {source}: "
+                f"{len(left)} vs {len(right)}.\n"
+                f"Left joints: {[n for _, n in left]}\n"
+                f"Right joints: {[n for _, n in right]}"
+            )
+
+        # Interleaved: left0, right0, left1, right1, ...
         joint_names: list[str] = []
-        for l, r in zip(left, right):
-            joint_names.append(l)
-            joint_names.append(r)
-
-        # Falls Dateien nicht perfekt symmetrisch sind, Rest anhängen
-        if len(left) > len(right):
-            joint_names.extend(left[len(right):])
-        elif len(right) > len(left):
-            joint_names.extend(right[len(left):])
+        for (_, l_name), (_, r_name) in zip(left, right):
+            joint_names.append(l_name)
+            joint_names.append(r_name)
 
         return joint_names
-    
 
+    def _detect_side(self, name: str, source: str) -> str:
+        """
+        Bestimmt, ob ein Gelenk 'left' oder 'right' ist (case-insensitive).
+        Wirft einen Fehler, wenn weder noch enthalten ist.
+        """
+        lower = name.lower()
+        if "left" in lower:
+            return "left"
+        if "right" in lower:
+            return "right"
+
+        raise ValueError(
+            f"Joint '{name}' in {source} does not contain 'left' or 'right'. "
+            f"Current naming assumption is: every joint name must contain "
+            f"'left' or 'right'."
+        )
+
+    def _joint_order_key(self, name: str, source: str) -> int:
+        """
+        Leitet einen Sortierschlüssel aus dem Gelenknamen ab.
+
+        Strategie:
+        1) Falls eine Zahl 0..n im Namen vorkommt -> diese als Ordnung nutzen.
+        2) Sonst über Schlüsselwörter ('hip', 'knee') sortieren.
+           Die Reihenfolge in 'semantic_order' definiert die Reihenfolge.
+
+        Wenn weder Zahl noch bekanntes Keyword gefunden wird, wird ein Fehler geworfen,
+        da das gegen deine aktuelle Naming-Annahme verstößt.
+        """
+        lower = name.lower()
+
+        # 1) Zahl im Namen suchen
+        num_match = re.search(r"(\d+)", lower)
+        if num_match:
+            return int(num_match.group(1))
+
+        # 2) Semantic Keywords (von dir: hip, knee)
+        semantic_order = ["hip", "thigh", "knee", "shin", "foot", "ankle"]
+
+        for idx, token in enumerate(semantic_order):
+            if token in lower:
+                return idx
+
+        # Wenn weder Zahl noch Keyword gefunden wurde -> Annahme verletzt
+        raise ValueError(
+            f"Could not infer order key for joint '{name}' in {source}. "
+            f"Expected either a number (0..n) or one of the keywords "
+            f"{semantic_order} in the name."
+        )
+
+
+
+    
     def _get_foot_link_names(self):
         """
         Extract foot link names from the robot description file.
@@ -398,46 +613,9 @@ class FileFormatAndPaths():
             self.relevant_paths_dict["project_root"]
         )
     
-    # def _get_mapped_joint_names(self) -> dict[str, str]:
-    #     """Return a dict of jnt names and indexes.
-    #     The jnt names are kept consistent. We read the XML or URDF jnt names and put them into the dict structure below.
-    #     If the amount of joints in the robot changes this needs to be changed.
-
-    #     We basically Map the freely chosen jnt names to a universal naming convention that should be the same through all robots.
-
-    #     Result example:
-    #     jnt names mapped:  {
-    #         'left_hip': 'left_joint_1', 
-    #         'right_hip': 'right_joint_1', 
-    #         'left_thigh': 'left_joint_2', 
-    #         'right_thigh': 'right_joint_2', 
-    #         'left_knee': 'left_joint_3', 
-    #         'right_knee': 'right_joint_3', 
-    #         'left_foot_ankle': 'left_joint_4', 
-    #         'right_foot_ankle': 'right_joint_4'
-    #     }
-    #     """
-    #     jnt_names_mapped: dict[str, str] = {
-    #         "left_hip": str(self.joint_names[0]),
-    #         "right_hip": str(self.joint_names[1]),
-    #         "left_thigh": str(self.joint_names[2]),
-    #         "right_thigh": str(self.joint_names[3]),
-    #         "left_knee": str(self.joint_names[4]),
-    #         "right_knee": str(self.joint_names[5]),
-    #         "left_foot_ankle": str(self.joint_names[6]),
-    #         "right_foot_ankle": str(self.joint_names[7]),
-    #     }
-
-    #     if len(jnt_names_mapped) != len(self.joint_names):
-    #         print("Be carefull! There are more or less joints defined in your robot_file (xml or urdf), than considered in your function FileFormatAndPaths._get_mapped_joint_names(self)")
-        
-
-    #     return jnt_names_mapped
-
-
-        
+      
     
-# testcase = FileFormatAndPaths(robot_file_format=FileFormatAndPaths.ChooseFileFormat.URDF)
+# testcase = FileFormatAndPaths(robot_file_format=FileFormatAndPaths.ChooseFileFormat.XML)
 # jnt_angles = testcase.set_default_joint_angles_dict(default_angles=[0.0, 0.0, 0.6, 0.6, 1.1, 1.1, 0.0, 0.0])
 
 # # print("dict: ", testcase.relevant_paths_dict)
@@ -447,48 +625,3 @@ class FileFormatAndPaths():
 # print("default joint angle 2: ", testcase.default_joint_angles)
 
 # print("foot link names: ", testcase.foot_link_names)
-
-# joint_indexes: dict[str, int] = {
-#             "left_hip": 0,
-#             "right_hip": 1,
-#             "left_thigh": 2,
-#             "right_thigh": 3,
-#             "left_knee": 4,
-#             "right_knee": 5,
-#             "left_foot_ankle": 6,
-#             "right_foot_ankle": 7,
-#         }
-
-
-# env_cfg = {
-#         "num_actions": len(testcase.joint_names), # number of jnt names probably (usually its 8)
-#         "default_joint_angles": testcase.set_default_joint_angles_dict(
-#             default_angles=[
-#                 0.0, # "left hip"
-#                 0.0, # "right hip"
-#                 0.6, # "left thigh"
-#                 0.6, # "right thigh"
-#                 1.1, # "left knee"
-#                 1.1, # "right shin"
-#                 0.0, # "left foot ankle"
-#                 0.0  # "right foot ankle"
-#                 ]
-#             ),
-#         "joint_names": testcase.joint_names,
-#         "kp": 200.0,
-#         "kd": 0,
-#         "termination_if_roll_greater_than": 30,
-#         "termination_if_pitch_greater_than": 30,
-#         "base_init_pos": [0.0, 0.0, 0.5],
-#         "base_init_quat": [1.0, 0.0, 0.0, 0.0],
-#         "episode_length_s": 10.0,
-#         "resampling_time_s": 2.0,
-#         "action_scale": 4,
-#         "simulate_action_latency": False,
-#         "clip_actions": 1.0,
-#         "robot_file_path": str(testcase.robot_file_path_relative), # for example: "robot_mjcf": dodo_robot\dodo.xml
-#         "foot_link_names": testcase.foot_link_names # for example: ['Left_FOOT_FE', 'Right_FOOT_FE']
-#     }
-
-# hip_aa_indices = [env_cfg["joint_names"].index(testcase.mapped_joint_names_dict["left_hip"]), env_cfg["joint_names"].index(testcase.mapped_joint_names_dict["right_hip"])]
-# print("jnt names mapped: ", hip_aa_indices)
