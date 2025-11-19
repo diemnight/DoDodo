@@ -2,12 +2,13 @@
 import numpy as np
 import genesis as gs
 from dodo_env import DodoEnv
-import file_format_and_paths
+from file_format_and_paths import FileFormatAndPaths
 import os
 
 gs.init(backend=gs.gpu)
 
-paths = file_format_and_paths.get_paths()
+dodo_path_helper: FileFormatAndPaths = FileFormatAndPaths(FileFormatAndPaths.ChooseFileFormat.URDF) # Create path helper
+
 manual_stepping = False
 robot_file_flag: str = "urdf" #TODO: write 'urdf' or 'xml' whatever you want to do
 jnt_names = None
@@ -30,26 +31,28 @@ plane = scene.add_entity(
     gs.morphs.Plane(),
 )
 
-if robot_file_flag == "urdf":
+if dodo_path_helper.robot_file_format == str(FileFormatAndPaths.ChooseFileFormat.URDF.value):
     dodo = scene.add_entity(
     gs.morphs.URDF(      
-        file  = str(os.path.join(paths['urdf'], "dodobot_v3.urdf")),
+        file  = str(os.path.join(dodo_path_helper.relevant_paths_dict['urdf'], "dodobot_v3.urdf")),
         fixed = False,
-        pos   = (0, 0, 0.5),
+        pos   = (0, 0, 0.58),
         euler = (0, 0, 0),
         )
     )
-    jnt_names = ["left_joint_1","right_joint_1","left_joint_2","right_joint_2", "left_joint_3","right_joint_3","left_joint_4","right_joint_4"]
+    jnt_names = dodo_path_helper.joint_names
+    #jnt_names = ["left_joint_1","right_joint_1","left_joint_2","right_joint_2", "left_joint_3","right_joint_3","left_joint_4","right_joint_4"]
 
-elif robot_file_flag == "xml":
+elif dodo_path_helper.robot_file_format == str(FileFormatAndPaths.ChooseFileFormat.XML.value):
     dodo = scene.add_entity(
         gs.morphs.MJCF(
-            file  = str(os.path.join(paths['dodo_robot'], "dodo.xml")),
+            file  = str(os.path.join(dodo_path_helper.relevant_paths_dict['dodo_robot'], "dodo.xml")),
             pos   = (0, 0, 0.5),
             euler = (0, 0, 0),
         )
     )
-    jnt_names = ["Left_HIP_AA","Right_HIP_AA","Left_THIGH_FE","Right_THIGH_FE", "Left_KNEE_FE","Right_SHIN_FE","Left_FOOT_ANKLE","Right_FOOT_ANKLE"]
+    jnt_names = dodo_path_helper.joint_names
+    #jnt_names = ["Left_HIP_AA","Right_HIP_AA","Left_THIGH_FE","Right_THIGH_FE", "Left_KNEE_FE","Right_SHIN_FE","Left_FOOT_ANKLE","Right_FOOT_ANKLE"]
 
 else:
     print("Neither 'URDF' nor 'XML' file was loaded. Therefore No robot is loaded into the simulation")
@@ -60,8 +63,8 @@ scene.build(n_envs=1)
 dofs_idx  = [dodo.get_joint(name).dof_idx_local for name in jnt_names]
 
 n_dofs    = len(dofs_idx)
-q_amp  = 0.5
-freq   = 2
+q_amp  = 0.8
+freq   = 1.3
 omega  = 2 * np.pi * freq
 kp     = 200.0  * np.ones(n_dofs, dtype=np.float32)
 kv     = 2.0*np.sqrt(kp) 
@@ -81,6 +84,12 @@ try:
     for step in range(total_steps):
         t = step * dt
         q_des = q_amp * np.sin(omega * t) * np.ones(n_dofs, dtype=np.float32)
+
+        # q_des[1::2] *= -1    # alle ungeraden Indizes negieren
+        # q_des[0] = 0
+        # q_des[1] = 0
+
+
         dodo.control_dofs_position(q_des, dofs_idx)
         if manual_stepping:
             input("enter to continue…")   # keep this to step manually

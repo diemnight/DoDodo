@@ -156,7 +156,7 @@ def get_cfgs():
         "kd": 2.0 * math.sqrt(200.0),
         "termination_if_roll_greater_than": 30,
         "termination_if_pitch_greater_than": 30,
-        "base_init_pos": [0.0, 0.0, 0.5],
+        "base_init_pos": [0.0, 0.0, 0.58],
         "base_init_quat": [1.0, 0.0, 0.0, 0.0],
         "episode_length_s": 10.0,
         "resampling_time_s": 2.0,

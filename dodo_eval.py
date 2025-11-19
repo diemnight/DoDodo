@@ -35,6 +35,8 @@ def main():
     log_dir = f"logs/{args.exp_name}"
     env_cfg, obs_cfg, reward_cfg, command_cfg, train_cfg = pickle.load(open(f"{log_dir}/cfgs.pkl", "rb"))
 
+    #env_cfg["base_init_pos"] = [0.0, 0.0, 0.58]
+
     # fix commands
     command_cfg["lin_vel_x_range"] = [args.vel, args.vel]
     command_cfg["lin_vel_y_range"] = [args.yvel, args.yvel]
