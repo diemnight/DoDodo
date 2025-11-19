@@ -164,7 +164,8 @@ def get_cfgs():
         "simulate_action_latency": False,
         "clip_actions": 1.0,
         "robot_file_path": str(dodo_path_helper.robot_file_path_relative), # for example: "robot_mjcf": dodo_robot\dodo.xml
-        "foot_link_names": dodo_path_helper.foot_link_names # for example: ['Left_FOOT_FE', 'Right_FOOT_FE']
+        "foot_link_names": dodo_path_helper.foot_link_names, # for example: ['Left_FOOT_FE', 'Right_FOOT_FE']
+        "robot_file_format": dodo_path_helper.robot_file_format
     }
     obs_cfg = {
         "num_obs": 6 + 3 * env_cfg["num_actions"] + 3,
@@ -339,7 +340,6 @@ def main():
         obs_cfg=obs_cfg,
         reward_cfg=reward_cfg,
         command_cfg=command_cfg,
-        dodo_path_helper=dodo_path_helper,
         show_viewer=False
     )
     env.reset()

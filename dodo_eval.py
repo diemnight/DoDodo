@@ -4,7 +4,6 @@ import os
 import pickle
 from importlib import metadata
 import torch
-from file_format_and_paths import FileFormatAndPaths
 
 try:
     try:
@@ -31,8 +30,6 @@ def main():
     parser.add_argument("-r", "--rot", type=float, default=0.0)
     args = parser.parse_args()
 
-    dodo_path_helper: FileFormatAndPaths = FileFormatAndPaths(FileFormatAndPaths.ChooseFileFormat.URDF) # Create path helper
-
     gs.init()
 
     log_dir = f"logs/{args.exp_name}"
@@ -50,7 +47,6 @@ def main():
         obs_cfg=obs_cfg,
         reward_cfg=reward_cfg,
         command_cfg=command_cfg,
-        dodo_path_helper=dodo_path_helper,
         show_viewer=True,
     )
     runner = OnPolicyRunner(env, train_cfg, log_dir, device=gs.device)

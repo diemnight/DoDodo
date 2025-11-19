@@ -4,7 +4,6 @@ import os
 import math
 import genesis as gs
 from genesis.utils.geom import quat_to_xyz, transform_by_quat, inv_quat, transform_quat_by_quat
-from file_format_and_paths import FileFormatAndPaths
 
 # ---------------------------------------------------
 # Reward Registry
@@ -26,7 +25,7 @@ class DodoEnv:
     CONTACT_HEIGHT = 0.05
     SWING_HEIGHT_THRESHOLD = 0.10
 
-    def __init__(self, num_envs, env_cfg, obs_cfg, reward_cfg, command_cfg, dodo_path_helper: FileFormatAndPaths, show_viewer=False):
+    def __init__(self, num_envs, env_cfg, obs_cfg, reward_cfg, command_cfg, show_viewer=False):
         self.num_envs = num_envs
         self.device = gs.device
         self.env_cfg = env_cfg
@@ -44,7 +43,9 @@ class DodoEnv:
         self.obs_scales = obs_cfg.get("obs_scales", {})
         self.reward_scales = reward_cfg.get("reward_scales", {})
 
-        self.dodo_path_helper = dodo_path_helper
+        #Create a dict where you map the joint_names from the URDF or XML to consistent/universal keys that should then be the same for all robot files.
+        self.mapped_joint_names: dict[str, int] = self._get_mapped_joint_names()
+        
 
         # === Rewards vorbereiten ===
         self.reward_functions = {}
@@ -81,7 +82,7 @@ class DodoEnv:
         self.base_init_quat = torch.tensor(env_cfg["base_init_quat"], device=self.device)
         self.inv_base_init_quat = inv_quat(self.base_init_quat)
 
-        if str(self.dodo_path_helper.robot_file_format) == "xml":
+        if str(self.env_cfg["robot_file_format"]) == "xml":
             self.robot = self.scene.add_entity(
                 gs.morphs.MJCF(
                     file=env_cfg.get("robot_file_path", "dodo.xml"),
@@ -89,7 +90,7 @@ class DodoEnv:
                     quat=self.base_init_quat.cpu().numpy(),
                 )
             )
-        elif str(self.dodo_path_helper.robot_file_format) == "urdf":
+        elif str(self.env_cfg["robot_file_format"]) == "urdf":
             self.robot = self.scene.add_entity(
                 gs.morphs.URDF(
                     file=env_cfg.get("robot_file_path", "dodobot_v3.urdf"),
@@ -116,10 +117,11 @@ class DodoEnv:
             dofs_idx_local=self.motors_dof_idx,
         )
 
+        #Edited for the use of self.joint_indexes
         self.ankle_links = [self.robot.get_link(n) for n in env_cfg.get("foot_link_names", [])]
-        self.hip_aa_indices = [env_cfg["joint_names"].index("Left_HIP_AA"), env_cfg["joint_names"].index("Right_HIP_AA")]
-        self.hip_fe_indices = [env_cfg["joint_names"].index("Left_THIGH_FE"), env_cfg["joint_names"].index("Right_THIGH_FE")]
-        self.knee_fe_indices = [env_cfg["joint_names"].index("Left_KNEE_FE"), env_cfg["joint_names"].index("Right_SHIN_FE")]
+        self.hip_aa_indices = [env_cfg["joint_names"].index(self.mapped_joint_names["left_hip"]), env_cfg["joint_names"].index(self.mapped_joint_names["right_hip"])]
+        self.hip_fe_indices = [env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"]), env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])]
+        self.knee_fe_indices = [env_cfg["joint_names"].index(self.mapped_joint_names["left_knee"]), env_cfg["joint_names"].index(self.mapped_joint_names["right_knee"])]
 
         # === Initialisiere Beobachtungs- und Aktionsspeicher ===
         self._init_buffers()
@@ -131,7 +133,45 @@ class DodoEnv:
             self.device,
         )
 
+    def _get_mapped_joint_names(self) -> dict[str, str]:
+        """Return a dict of jnt names and indexes.
+        The jnt names are kept consistent. We read the XML or URDF jnt names and put them into the dict structure below.
+        If the amount of joints in the robot changes this needs to be changed.
 
+        We basically Map the freely chosen jnt names to a universal naming convention that should be the same through all robots.
+
+        Result example:
+        jnt names mapped:  {
+            'left_hip': 'left_joint_1', 
+            'right_hip': 'right_joint_1', 
+            'left_thigh': 'left_joint_2', 
+            'right_thigh': 'right_joint_2', 
+            'left_knee': 'left_joint_3', 
+            'right_knee': 'right_joint_3', 
+            'left_foot_ankle': 'left_joint_4', 
+            'right_foot_ankle': 'right_joint_4'
+        }
+        """
+        joint_names = self.env_cfg["joint_names"]
+
+        jnt_names_mapped: dict[str, str] = {
+            "left_hip": str(joint_names[0]),
+            "right_hip": str(joint_names[1]),
+            "left_thigh": str(joint_names[2]),
+            "right_thigh": str(joint_names[3]),
+            "left_knee": str(joint_names[4]),
+            "right_knee": str(joint_names[5]),
+            "left_foot_ankle": str(joint_names[6]),
+            "right_foot_ankle": str(joint_names[7]),
+        }
+
+        if len(jnt_names_mapped) != len(joint_names):
+            print("Be carefull! There are more or less joints defined in your robot_file (xml or urdf), than considered in your function FileFormatAndPaths._get_mapped_joint_names(self)")
+
+        #print("mapped joint names: ", jnt_names_mapped)
+
+        return jnt_names_mapped
+    
     def _init_buffers(self):
         N, A, C = self.num_envs, self.num_actions, self.num_commands
         self.base_lin_vel = torch.zeros((N, 3), device=self.device)
@@ -356,8 +396,8 @@ class DodoEnv:
         """
         hs = self.current_ankle_heights
         stance = (hs < self.CONTACT_HEIGHT).any(dim=1).float()
-        idx_l = self.env_cfg["joint_names"].index("Left_KNEE_FE")
-        idx_r = self.env_cfg["joint_names"].index("Right_SHIN_FE")
+        idx_l = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_knee"])
+        idx_r = self.env_cfg["joint_names"].index(self.mapped_joint_names["right_knee"])
         ext_l = 1.0 - torch.relu(self.dof_pos[:, idx_l])
         ext_r = 1.0 - torch.relu(-self.dof_pos[:, idx_r])
         return stance * ((ext_l + ext_r) * 0.5)
@@ -443,8 +483,8 @@ class DodoEnv:
         """
         Vogel‑typischer Hüft‑FE‑Zyklustreiber als Gauß‑Reward.
         """
-        idx_l = self.env_cfg["joint_names"].index("Left_THIGH_FE")
-        idx_r = self.env_cfg["joint_names"].index("Right_THIGH_FE")
+        idx_l = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])
+        idx_r = self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])
         phase = ((self.episode_length_buf.float() * self.dt) % self.reward_cfg["period"]) / self.reward_cfg["period"]
         omega = 2 * math.pi * phase
         tgt  = self.reward_cfg["bird_hip_target"]
@@ -463,8 +503,8 @@ class DodoEnv:
         """
         Gauß‑Strafe für Hüft‑AA Abduktion/Adduktion.
         """
-        idx_l = self.env_cfg["joint_names"].index("Left_HIP_AA")
-        idx_r = self.env_cfg["joint_names"].index("Right_HIP_AA")
+        idx_l = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_hip"])
+        idx_r = self.env_cfg["joint_names"].index(self.mapped_joint_names["right_hip"])
         abd_l = self.dof_pos[:, idx_l]
         abd_r = self.dof_pos[:, idx_r]
         err = abd_l**2 + abd_r**2
@@ -552,23 +592,23 @@ class DodoEnv:
 
     @register_reward()
     def _reward_penalize_hip_fe(self):
-        idx = self.env_cfg["joint_names"].index("Left_THIGH_FE")
+        idx = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])
         return torch.abs(self.dof_pos[:, idx])
 
     @register_reward()
     def _reward_penalize_hip_fe_diff(self):
-        i0 = self.env_cfg["joint_names"].index("Left_THIGH_FE")
-        i1 = self.env_cfg["joint_names"].index("Right_THIGH_FE")
+        i0 = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])
+        i1 = self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])
         return torch.abs(self.dof_pos[:, i0] - self.dof_pos[:, i1])
 
     @register_reward()
     def _reward_penalize_knee_fe_left(self):
-        i0 = self.env_cfg["joint_names"].index("Left_KNEE_FE")
+        i0 = self.env_cfg["joint_names"].index(self.mapped_joint_names["left_knee"])
         return torch.relu(0.9 + self.dof_pos[:, i0])
 
     @register_reward()
     def _reward_penalize_knee_fe_right(self):
-        i1 = self.env_cfg["joint_names"].index("Right_SHIN_FE")
+        i1 = self.env_cfg["joint_names"].index(self.mapped_joint_names["right_knee"])
         return torch.relu(-self.dof_pos[:, i1] + 0.9)
 
     @register_reward()
@@ -577,8 +617,8 @@ class DodoEnv:
 
     @register_reward()
     def _reward_gait_regularity(self):
-        left = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_THIGH_FE")]
-        right = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_THIGH_FE")]
+        left = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])]
+        right = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])]
         phase_diff = torch.abs(left + right)
         return torch.exp(-phase_diff / 0.3)
 
@@ -624,8 +664,8 @@ class DodoEnv:
 
     @register_reward()
     def _reward_leg_swing_forward(self):
-        l = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_THIGH_FE")]
-        r = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_THIGH_FE")]
+        l = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])]
+        r = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])]
         return torch.exp(-((l - (-r))**2) / 0.1)
 
     @register_reward()
@@ -637,8 +677,8 @@ class DodoEnv:
         phase = (self.episode_length_buf.float() % 100) / 100 * 2 * math.pi
         lt = 0.3 * torch.sin(phase)
         rt = -0.3 * torch.sin(phase)
-        l = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_THIGH_FE")]
-        r = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_THIGH_FE")]
+        l = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])]
+        r = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])]
         err = (l - lt)**2 + (r - rt)**2
         return torch.exp(-err / 0.02)
 
@@ -648,8 +688,8 @@ class DodoEnv:
 
     @register_reward()
     def _reward_knee_hyperextension(self):
-        kp = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_KNEE_FE")]
-        kp2 = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_SHIN_FE")]
+        kp = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_knee"])]
+        kp2 = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_knee"])]
         return torch.relu(kp)**2 + torch.relu(kp2)**2
 
     @register_reward()
@@ -658,10 +698,10 @@ class DodoEnv:
 
     @register_reward()
     def _reward_bird_knee_posture(self):
-        lt = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_THIGH_FE")]
-        rt = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_THIGH_FE")]
-        lk = self.dof_pos[:, self.env_cfg["joint_names"].index("Left_KNEE_FE")]
-        rk = self.dof_pos[:, self.env_cfg["joint_names"].index("Right_SHIN_FE")]
+        lt = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_thigh"])]
+        rt = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_thigh"])]
+        lk = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["left_knee"])]
+        rk = self.dof_pos[:, self.env_cfg["joint_names"].index(self.mapped_joint_names["right_knee"])]
         pr = -((lk - lt)**2 + (rk - rt)**2)
         pen = 10 * (torch.relu(lk)**2 + torch.relu(rk)**2)
         return pr - pen

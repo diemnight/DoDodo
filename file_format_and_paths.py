@@ -36,6 +36,7 @@ class FileFormatAndPaths():
         self.joint_names: list[str] = self._extract_joint_names()
         self.foot_link_names: list[str] = self._get_foot_link_names()
         self.robot_file_path_relative: Path = self._get_relative_robot_file_path()
+        #self.mapped_joint_names_dict: dict[str, str] = self._get_mapped_joint_names()
 
         # protected members
         
@@ -397,12 +398,46 @@ class FileFormatAndPaths():
             self.relevant_paths_dict["project_root"]
         )
     
+    # def _get_mapped_joint_names(self) -> dict[str, str]:
+    #     """Return a dict of jnt names and indexes.
+    #     The jnt names are kept consistent. We read the XML or URDF jnt names and put them into the dict structure below.
+    #     If the amount of joints in the robot changes this needs to be changed.
+
+    #     We basically Map the freely chosen jnt names to a universal naming convention that should be the same through all robots.
+
+    #     Result example:
+    #     jnt names mapped:  {
+    #         'left_hip': 'left_joint_1', 
+    #         'right_hip': 'right_joint_1', 
+    #         'left_thigh': 'left_joint_2', 
+    #         'right_thigh': 'right_joint_2', 
+    #         'left_knee': 'left_joint_3', 
+    #         'right_knee': 'right_joint_3', 
+    #         'left_foot_ankle': 'left_joint_4', 
+    #         'right_foot_ankle': 'right_joint_4'
+    #     }
+    #     """
+    #     jnt_names_mapped: dict[str, str] = {
+    #         "left_hip": str(self.joint_names[0]),
+    #         "right_hip": str(self.joint_names[1]),
+    #         "left_thigh": str(self.joint_names[2]),
+    #         "right_thigh": str(self.joint_names[3]),
+    #         "left_knee": str(self.joint_names[4]),
+    #         "right_knee": str(self.joint_names[5]),
+    #         "left_foot_ankle": str(self.joint_names[6]),
+    #         "right_foot_ankle": str(self.joint_names[7]),
+    #     }
+
+    #     if len(jnt_names_mapped) != len(self.joint_names):
+    #         print("Be carefull! There are more or less joints defined in your robot_file (xml or urdf), than considered in your function FileFormatAndPaths._get_mapped_joint_names(self)")
+        
+
+    #     return jnt_names_mapped
+
 
         
-        
-
-
-# testcase = FileFormatAndPaths(robot_file_format=FileFormatAndPaths.ChooseFileFormat.XML)
+    
+# testcase = FileFormatAndPaths(robot_file_format=FileFormatAndPaths.ChooseFileFormat.URDF)
 # jnt_angles = testcase.set_default_joint_angles_dict(default_angles=[0.0, 0.0, 0.6, 0.6, 1.1, 1.1, 0.0, 0.0])
 
 # # print("dict: ", testcase.relevant_paths_dict)
@@ -412,6 +447,48 @@ class FileFormatAndPaths():
 # print("default joint angle 2: ", testcase.default_joint_angles)
 
 # print("foot link names: ", testcase.foot_link_names)
-# print("robot file path relative: ", testcase.robot_file_path_relative)
+
+# joint_indexes: dict[str, int] = {
+#             "left_hip": 0,
+#             "right_hip": 1,
+#             "left_thigh": 2,
+#             "right_thigh": 3,
+#             "left_knee": 4,
+#             "right_knee": 5,
+#             "left_foot_ankle": 6,
+#             "right_foot_ankle": 7,
+#         }
 
 
+# env_cfg = {
+#         "num_actions": len(testcase.joint_names), # number of jnt names probably (usually its 8)
+#         "default_joint_angles": testcase.set_default_joint_angles_dict(
+#             default_angles=[
+#                 0.0, # "left hip"
+#                 0.0, # "right hip"
+#                 0.6, # "left thigh"
+#                 0.6, # "right thigh"
+#                 1.1, # "left knee"
+#                 1.1, # "right shin"
+#                 0.0, # "left foot ankle"
+#                 0.0  # "right foot ankle"
+#                 ]
+#             ),
+#         "joint_names": testcase.joint_names,
+#         "kp": 200.0,
+#         "kd": 0,
+#         "termination_if_roll_greater_than": 30,
+#         "termination_if_pitch_greater_than": 30,
+#         "base_init_pos": [0.0, 0.0, 0.5],
+#         "base_init_quat": [1.0, 0.0, 0.0, 0.0],
+#         "episode_length_s": 10.0,
+#         "resampling_time_s": 2.0,
+#         "action_scale": 4,
+#         "simulate_action_latency": False,
+#         "clip_actions": 1.0,
+#         "robot_file_path": str(testcase.robot_file_path_relative), # for example: "robot_mjcf": dodo_robot\dodo.xml
+#         "foot_link_names": testcase.foot_link_names # for example: ['Left_FOOT_FE', 'Right_FOOT_FE']
+#     }
+
+# hip_aa_indices = [env_cfg["joint_names"].index(testcase.mapped_joint_names_dict["left_hip"]), env_cfg["joint_names"].index(testcase.mapped_joint_names_dict["right_hip"])]
+# print("jnt names mapped: ", hip_aa_indices)
