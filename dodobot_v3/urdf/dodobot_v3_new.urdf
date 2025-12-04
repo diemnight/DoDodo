@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Collision geometry simplified, mimic joints removed, and joint axis alignment corrected -->
+<!-- Collision meshes are replaced with primitive shapes & removed mimic joint definitions & aligned axes -->
 <robot
   name="dodobot_v3">
+  <link name="base_link"/>
 
+  <joint name="base_to_body" type="fixed">
+    <!-- Rotate -90 degrees around Z-axis: aligns old +Y to new +X -->
+    <origin xyz="0 0 0" rpy="0 0 -1.5708"/>
+    <parent link="base_link"/>
+    <child link="body_link"/>
+  </joint>
   <!-- ====================== body_link ====================== -->
   <link
     name="body_link">
     <inertial>
       <origin
         xyz="-0.0049584 0.034185 -0.011531"
-        rpy="0 0 0" />
+        rpy="0 0 0"/>
       <mass
         value="3.9306" />
       <inertia
@@ -27,7 +34,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/body_link.STL" />   <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/body_link.STL" />
       </geometry>
       <material
         name="">
@@ -38,11 +45,11 @@
 
     <collision> <!-- Simplified collision to box -->
       <origin
-        xyz="0 0.0135 0"
+        xyz="0 0.0135 0.005"
         rpy="0 0 0" />
       <geometry>
         <box
-          size="0.21 0.29 0.24" />
+          size="0.21 0.29 0.23" />
       </geometry>
     </collision>
   </link>
@@ -53,7 +60,7 @@
     <inertial>
       <origin
         xyz="0.0026476 -0.011738 0.0034333"
-        rpy="0 0 0" />
+        rpy="-1.5708 0 -1.5708" />
       <mass
         value="0.087539" />
       <inertia
@@ -68,10 +75,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="1.5708 0 1.5708" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/right_link_1.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/right_link_1.STL" />
       </geometry>
       <material
         name="">
@@ -80,16 +87,7 @@
       </material>
     </visual>
 
-    <collision> <!-- Simplified collision to capsule -->
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <capsule
-          radius="0.026"
-          length="0.09" />
-      </geometry>
-    </collision>
+    <!-- Omitted collision -->
   </link>
 
   <joint
@@ -97,13 +95,13 @@
     type="revolute">
     <origin
       xyz="0.066 0 -0.092"
-      rpy="1.5708 0 3.1416" />
+      rpy="0 0 1.5708" />
     <parent
       link="body_link" />
     <child
       link="right_link_1" />
     <axis
-      xyz="0 0 -1" />
+      xyz="-1 0 0" />
     <limit
       lower="-0.3"
       upper="0.3"
@@ -143,10 +141,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 1.5708 -1.5708" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/right_link_2.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/right_link_2.STL" />
       </geometry>
       <material
         name="">
@@ -157,8 +155,8 @@
 
     <collision> <!-- Simplified collision to capsule -->
       <origin
-        xyz="0.1 0 0.021"
-        rpy="0 1.5708 0" />
+        xyz="0 -0.02 -0.0982"
+        rpy="0 0 0" />
       <geometry>
         <capsule
           radius="0.03"
@@ -171,14 +169,14 @@
     name="right_joint_2"
     type="revolute">
     <origin
-      xyz="0 -0.04009 -0.01705"
-      rpy="1.5708 0 -1.5708" />
+      xyz="-0.01705 0 -0.04009"
+      rpy="0 0 0" />
     <parent
       link="right_link_1" />
     <child
       link="right_link_2" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
@@ -218,10 +216,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 1.5708 -1.5708" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/right_link_3.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/right_link_3.STL" />
       </geometry>
       <material
         name="">
@@ -232,12 +230,12 @@
 
     <collision> <!-- Simplified collision to capsule -->
       <origin
-        xyz="0.1 0 0.01"
-        rpy="0 1.5708 0" />
+        xyz="0 -0.02 -0.083"
+        rpy="0 0 0" />
       <geometry>
         <capsule
           radius="0.03"
-          length="0.175" />
+          length="0.14" />
       </geometry>
     </collision>
   </link>
@@ -246,14 +244,14 @@
     name="right_joint_3"
     type="revolute">
     <origin
-      xyz="0.2 0 0.0504"
+      xyz="0 -0.0504 -0.2"
       rpy="0 0 0" />
     <parent
       link="right_link_2" />
     <child
       link="right_link_3" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
@@ -293,10 +291,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="1.5708 1.5708 0" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/right_link_4.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/right_link_4.STL" />
       </geometry>
       <material
         name="">
@@ -307,11 +305,11 @@
 
     <collision> <!-- Simplified collision to box -->
       <origin
-        xyz="0.011 0.0135 -0.0035"
+        xyz="0.014 0.0047 -0.0119"
         rpy="0 0 0" />
       <geometry>
         <box
-          size="0.06 0.095 0.034" />
+          size="0.095 0.036 0.0615" />
       </geometry>
     </collision>
   </link>
@@ -320,14 +318,14 @@
     name="right_joint_4"
     type="revolute">
     <origin
-      xyz="0.2 0 0.03745"
+      xyz="0 -0.03745 -0.2"
       rpy="0 0 0" />
     <parent
       link="right_link_3" />
     <child
       link="right_link_4" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
@@ -367,10 +365,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="1.5708 0 1.5708" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/left_link_1.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/left_link_1.STL" />
       </geometry>
       <material
         name="">
@@ -379,16 +377,7 @@
       </material>
     </visual>
 
-    <collision> <!-- Simplified collision to capsule -->
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <capsule
-          radius="0.026"
-          length="0.09" />
-      </geometry>
-    </collision>
+    <!-- Omitted collsion -->
   </link>
 
   <joint
@@ -396,13 +385,13 @@
     type="revolute">
     <origin
       xyz="-0.066 0 -0.092"
-      rpy="1.5708 0 3.1416" />
+      rpy="0 0 1.5708" />
     <parent
       link="body_link" />
     <child
       link="left_link_1" />
     <axis
-      xyz="0 0 1" />
+      xyz="-1 0 0" />
     <limit
       lower="-0.3"
       upper="0.3"
@@ -442,10 +431,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="1.5708 1.5708 0" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/left_link_2.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/left_link_2.STL" />
       </geometry>
       <material
         name="">
@@ -456,12 +445,12 @@
 
     <collision> <!-- Simplified collision to capsule -->
       <origin
-        xyz="0.1 0 -0.01"
-        rpy="0 1.5708 0" />
+        xyz="0 0.007 -0.0982"
+        rpy="0 0 0" />
       <geometry>
         <capsule
           radius="0.03"
-          length="0.185" />
+          length="0.18" />
       </geometry>
     </collision>
   </link>
@@ -470,14 +459,14 @@
     name="left_joint_2"
     type="revolute">
     <origin
-      xyz="0.01295 -0.04009 -0.01705"
-      rpy="1.5708 0 -1.5708" />
+      xyz="-0.01705 0.01295 -0.04009"
+      rpy="0 0 0" />
     <parent
       link="left_link_1" />
     <child
       link="left_link_2" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
@@ -517,10 +506,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="1.5708 1.5708 0" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/left_link_3.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/left_link_3.STL" />
       </geometry>
       <material
         name="">
@@ -531,12 +520,12 @@
 
     <collision> <!-- Simplified collision to capsule -->
       <origin
-        xyz="0.1 0 -0.01"
-        rpy="0 1.5708 0" />
+        xyz="0 0.02 -0.083"
+        rpy="0 0 0" />
       <geometry>
         <capsule
           radius="0.03"
-          length="0.175" />
+          length="0.14" />
       </geometry>
     </collision>
   </link>
@@ -545,14 +534,14 @@
     name="left_joint_3"
     type="revolute">
     <origin
-      xyz="0.2 0 -0.03745"
+      xyz="0 0.03745 -0.2"
       rpy="0 0 0" />
     <parent
       link="left_link_2" />
     <child
       link="left_link_3" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
@@ -592,10 +581,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 1.5708 -1.5708" />
       <geometry>
         <mesh
-          filename="package://dodobot_v3/meshes/left_link_4.STL" />    <!-- use relative path if needed -->
+          filename="package://dodobot_v3/meshes/left_link_4.STL" />
       </geometry>
       <material
         name="">
@@ -606,11 +595,11 @@
 
     <collision> <!-- Simplified collision to box -->
       <origin
-        xyz="0.011 0.0135 0.0035"
+        xyz="0.014 -0.0045 -0.0119"
         rpy="0 0 0" />
       <geometry>
         <box
-          size="0.06 0.095 0.034" />
+          size="0.095 0.036 0.0615" />
       </geometry>
     </collision>
   </link>
@@ -620,14 +609,14 @@
     name="left_joint_4"
     type="revolute">
     <origin
-      xyz="0.2 0 -0.03745"
+      xyz="0 0.03745 -0.2"
       rpy="0 0 0" />
     <parent
       link="left_link_3" />
     <child
       link="left_link_4" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 -1 0" />
     <limit
       lower="-1.5"
       upper="1.5"
